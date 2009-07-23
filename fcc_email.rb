@@ -2,7 +2,7 @@ require 'rubygems'
 require 'fastercsv'
 require 'pony'
 
-CSV_FILE = 'fcc_comments_edited.csv'
+CSV_FILE = 'nbb_fcc_comments.csv'
 DOCKET = '00-2000'
 #TO_ADDRESS = 'alexanderkahn@gmail.com'
 TO_ADDRESS = 'ecfs@fcc.gov'
@@ -36,7 +36,7 @@ ECFS - Email Filing
 <DOCUMENT-TYPE> CO
 <PHONE-NUMBER>
 <DESCRIPTION> Brief Comment
-<CONTACT-EMAIL> #{from_email('contact')}
+<CONTACT-EMAIL> #{contact_email}
 <TEXT> #{@comment[:date]}
 
 Ms. Marlene H. Dortch, Secretary
@@ -56,7 +56,7 @@ Dear Ms. Dortch,
   def send_email
     mail = {
       :to => TO_ADDRESS,
-      :from => from_email('from'),
+      :from => from_email,
       :body => body,
       :subject => "Comment on Docket 09-51 from #{@comment[:name]}"
     }
@@ -75,14 +75,17 @@ Dear Ms. Dortch,
       [@comment[:first], @comment[:last]].join(' ')
     end
 
-    # Return a from address for either the CONTACT_EMAIL field or the From: header
-    def from_email(context)
-      if context == 'contact'
-        TESTING_EMAIL || @comment[:email]
-      elsif context == 'from'
-        "#{TESTING_NAME} <#{TESTING_EMAIL}>" || "#{@comment[:name]} <#{@comment[:email]}>"
+    # Return a contact email address for testing or for a real activist
+    def contact_email
+      TESTING_EMAIL || @comment[:email]
+    end
+
+    # Returns a formatted name and email address for testing or for a real activist
+    def from_email
+      if TESTING_EMAIL
+        return "#{TESTING_NAME} <#{TESTING_EMAIL}>" 
       else
-        raise ArgumentError, "Invalid context given for from_email"
+        return "#{@comment[:name]} <#{@comment[:email]}>"
       end
     end
 end
@@ -97,6 +100,7 @@ range = Range.new(ARGV[0].to_i, row_end)
 
 # Confirmation prompt
 puts "Are you sure you want to send #{ARGV[1]} emails, starting at #{ARGV[0]}?"
+puts "Sending to #{TO_ADDRESS} for docket #{DOCKET}"
 execute = $stdin.gets
 
 if ['y', 'Y', 'yes', 'Yes'].include?(execute.chomp)
